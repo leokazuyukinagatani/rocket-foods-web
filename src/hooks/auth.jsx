@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { api } from '../services/api'
-
+import { toast } from 'react-toastify'
 export const AuthContext = createContext({})
 
 function AuthProvider({ children }) {
   const [data, setData] = useState({})
+  // const navigate = useNavigate()
 
   async function signIn({ email, password }) {
     try {
@@ -16,11 +17,12 @@ function AuthProvider({ children }) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
       setData({ user, token })
       console.log(user, token)
+      // navigate('/')
     } catch (error) {
       if (error.response) {
-        return error.response.data.message
+        toast.warning(error.response.data.message)
       } else {
-        return 'Não foi possível entrar.'
+        toast.warning('Não foi possível entrar.')
       }
     }
   }
@@ -28,6 +30,7 @@ function AuthProvider({ children }) {
     localStorage.removeItem('@rocketfood:user')
     localStorage.removeItem('@rocketfood:token')
     setData({})
+    // navigate('/')
   }
 
   // async function updateProfile({ user, avatarFile }) {
@@ -54,6 +57,21 @@ function AuthProvider({ children }) {
   //   }
   // }
 
+
+  async function signUp({ name, email, password }) {
+    if (!name || !email || !password) {
+      toast.warning('Preencha todos os campos!')
+      return
+    }
+
+    try {
+      await api.post('/users', { name, email, password })
+      navigate('/login')
+    } catch (error) {
+      toast.warning(error.response.data.message)
+    }
+  }
+
   useEffect(() => {
     const user = localStorage.getItem('@rocketfood:user')
     const token = localStorage.getItem('@rocketfood:token')
@@ -65,13 +83,14 @@ function AuthProvider({ children }) {
         user: JSON.parse(user),
       })
     }
-  }, [])
+  }, [data])
 
   return (
     <AuthContext.Provider
       value={{
         signIn,
         signOut,
+        signUp,
         // updateProfile,
         user: data.user,
       }}
